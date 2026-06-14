@@ -1,0 +1,43 @@
+EJEMPLOS VALIDOS
+int x;
+x = 5;
+
+int a;
+cin >> a;
+cout << a;
+
+int x;
+x = (5 + 3) * 2;
+
+int x;
+x = 10;
+if (x > 5) {
+    cout << x;
+} else {
+    cout << 0;
+}
+
+
+int i;
+i = 0;
+while (i < 5) {
+    i = i + 1;
+}
+
+
+
+EJEMPLOS INVALIDOS
+int 4x;
+x = 5;
+
+x =  5.3.3;
+
+if ($x > 5)
+    cout << x;
+
+while %$x < 5 {
+    x = x + 1;
+}
+
+
+cout << "*·%$·%hola mundo*;
