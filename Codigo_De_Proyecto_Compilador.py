@@ -1,3 +1,4 @@
+import re
 def lexico(codigo):
 
     codigo = codigo + " "
@@ -42,54 +43,54 @@ def lexico(codigo):
                 continue
 
             elif c == '+':
-                tokens.append(101)
+                tokens.append((101, '+'))
                 i += 1
 
             elif c == '-':
-                tokens.append(102)
+                tokens.append((102, '-'))
                 i += 1
 
             elif c == '*':
-                tokens.append(103)
+                tokens.append((103, '*'))
                 i += 1
 
             elif c == '/':
-                tokens.append(104)
+                tokens.append((104, '/'))
                 i += 1
 
             elif c == '=':
                 if i+1 < n and codigo[i+1] == '=':
-                    tokens.append(110)
+                    tokens.append((110, '=='))
                     i += 2
                 else:
-                    tokens.append(105)
+                    tokens.append((105, '='))
                     i += 1
 
             elif c == '<':
                 if i+1 < n and codigo[i+1] == '=':
-                    tokens.append(108)
+                    tokens.append((108, '<='))
                     i += 2
                 elif i+1 < n and codigo[i+1] == '<':
-                    tokens.append(115)
+                    tokens.append((115, '<<'))
                     i += 2
                 else:
-                    tokens.append(106)
+                    tokens.append((106, '<'))
                     i += 1
 
             elif c == '>':
                 if i+1 < n and codigo[i+1] == '=':
-                    tokens.append(109)
+                    tokens.append((109, '>='))
                     i += 2
                 elif i+1 < n and codigo[i+1] == '>':
-                    tokens.append(114)
+                    tokens.append((114, '>>'))
                     i += 2
                 else:
-                    tokens.append(107)
+                    tokens.append((107, '>'))
                     i += 1
 
             elif c == '!':
                 if i+1 < n and codigo[i+1] == '=':
-                    tokens.append(111)
+                    tokens.append((111, '!='))
                     i += 2
                 else:
                     errores.append(f"ERROR: operador ! inválido en posición {i}")
@@ -97,7 +98,7 @@ def lexico(codigo):
 
             elif c == '&':
                 if i+1 < n and codigo[i+1] == '&':
-                    tokens.append(112)
+                    tokens.append((112, '&&'))
                     i += 2
                 else:
                     errores.append(f"ERROR: operador & inválido en posición {i}")
@@ -105,34 +106,34 @@ def lexico(codigo):
 
             elif c == '|':
                 if i+1 < n and codigo[i+1] == '|':
-                    tokens.append(113)
+                    tokens.append((113, '||'))
                     i += 2
                 else:
                     errores.append(f"ERROR: operador | inválido en posición {i}")
                     i += 1
 
             elif c == '(':
-                tokens.append(116)
+                tokens.append((116, '('))
                 i += 1
 
             elif c == ')':
-                tokens.append(117)
+                tokens.append((117, ')'))
                 i += 1
 
             elif c == '{':
-                tokens.append(118)
+                tokens.append((118, '{'))
                 i += 1
 
             elif c == '}':
-                tokens.append(119)
+                tokens.append((119, '}'))
                 i += 1
 
             elif c == ';':
-                tokens.append(120)
+                tokens.append((120, ';'))
                 i += 1
 
             elif c == ',':
-                tokens.append(121)
+                tokens.append((121, ','))
                 i += 1
 
             else:
@@ -151,27 +152,27 @@ def lexico(codigo):
             else:
 
                 if lexema == "int":
-                    tokens.append(10)
+                    tokens.append((10, 'int'))
                 elif lexema == "float":
-                    tokens.append(11)
+                    tokens.append((11, 'float'))
                 elif lexema == "void":
-                    tokens.append(12)
+                    tokens.append((12, 'void'))
                 elif lexema == "if":
-                    tokens.append(20)
+                    tokens.append((20, 'if'))
                 elif lexema == "else":
-                    tokens.append(21)
+                    tokens.append((21, 'else'))
                 elif lexema == "while":
-                    tokens.append(22)
+                    tokens.append((22, 'while'))
                 elif lexema == "for":
-                    tokens.append(23)
+                    tokens.append((23, 'for'))
                 elif lexema == "return":
-                    tokens.append(24)
+                    tokens.append((24, 'return'))
                 elif lexema == "cin":
-                    tokens.append(25)
+                    tokens.append((25, 'cin'))
                 elif lexema == "cout":
-                    tokens.append(26)
+                    tokens.append((26, 'cout'))
                 else:
-                    tokens.append(1000)
+                    tokens.append((1000, lexema))
 
                 lexema = ""
                 estado = 0
@@ -207,7 +208,7 @@ def lexico(codigo):
                 continue
 
             else:
-                tokens.append(2000)
+                tokens.append((2000, lexema))
                 lexema = ""
                 estado = 0
                 continue
@@ -228,7 +229,7 @@ def lexico(codigo):
                 if lexema[-1] == '.':
                     errores.append(f"ERROR: número real inválido '{lexema}'")
                 else:
-                    tokens.append(3000)
+                    tokens.append((3000, lexema))
 
                 lexema = ""
                 estado = 0
@@ -240,7 +241,7 @@ def lexico(codigo):
         elif estado == 4:
 
             if c == '"':
-                tokens.append(4000)
+                tokens.append((4000, '"' + lexema + '"'))
                 lexema = ""
                 estado = 0
                 i += 1
@@ -256,7 +257,8 @@ def lexico(codigo):
         errores.append("ERROR: cadena sin cerrar")
 
     return tokens, errores
-#ANALIZADOR SINTACTICO
+
+
 def parsear(tokens):
 
     if tokens and isinstance(tokens[0], tuple):
@@ -645,23 +647,610 @@ class _Parser:
         #Si no es un tipo, retorna error.
         return False, f"ERROR SINTÁCTICO: se esperaba un tipo de dato en la posición {self.i}"
 
-codigo = '''
-while (x < 5) {
-    x = x  1;
+
+
+# ==========================================
+# ANALIZADOR SEMÁNTICO 
+# ==========================================
+
+RESERVADAS = {
+    "int", "float", "void", "if", "else", "while", "for", "return", "cin", "cout"
 }
 
+TIPOS_NUMERICOS = {"int", "float"}
+OPERADORES_ARIT = {"+", "-", "*", "/", "%", "^"}
+OPERADORES_REL = {"<", ">", "<=", ">=", "==", "!="}
+OPERADORES_LOG = {"&&", "||"}
+OPERADORES_SEM = OPERADORES_ARIT | OPERADORES_REL | OPERADORES_LOG
 
+PRECEDENCIA = {
+    "||": 1,
+    "&&": 2,
+    "==": 3, "!=": 3, "<": 3, ">": 3, "<=": 3, ">=": 3,
+    "+": 4, "-": 4,
+    "*": 5, "/": 5, "%": 5,
+    "^": 6,
+}
+
+tablaSimbolos = {}
+tablaFunciones = {}
+
+
+def limpiar_semantico():
+    tablaSimbolos.clear()
+    tablaFunciones.clear()
+
+
+def token_codigo(tok):
+    return tok[0] if isinstance(tok, tuple) else tok
+
+
+def token_lexema(tok):
+    if isinstance(tok, tuple) and len(tok) > 1:
+        return tok[1]
+    return str(tok)
+
+
+def _es_identificador(lexema):
+    return bool(re.fullmatch(r"[A-Za-z_]\w*", lexema)) and lexema not in RESERVADAS
+
+
+def _es_entero(tok):
+    return re.fullmatch(r"\d+", tok) is not None
+
+
+def _es_real(tok):
+    return re.fullmatch(r"\d+\.\d+", tok) is not None
+
+
+def _es_cadena(tok):
+    return re.fullmatch(r'"[^"]*"', tok, flags=re.S) is not None
+
+
+def _tipo_literal(tok):
+    if _es_entero(tok):
+        return "int"
+    if _es_real(tok):
+        return "float"
+    if _es_cadena(tok):
+        return "cadena"
+    return None
+
+
+def _buscar_en_ambitos(nombre, ambitos):
+    for ambito in reversed(ambitos):
+        if nombre in ambito:
+            return True, ambito[nombre]
+    return False, None
+
+
+def registrarVariable(nombre, tipo, ambito):
+    if nombre in ambito:
+        return False, f"ERROR SEMÁNTICO: '{nombre}' ya fue declarada en este ámbito"
+    ambito[nombre] = tipo
+    return True, ""
+
+
+def extraer_parametros(lista_texto):
+    if isinstance(lista_texto, str):
+        texto = lista_texto.strip()
+    else:
+        texto = " ".join(token_lexema(t) for t in lista_texto).strip()
+
+    if not texto:
+        return []
+
+    params = []
+    for p in [x.strip() for x in texto.split(",") if x.strip()]:
+        m = re.match(r"^(int|float|void)\s+([A-Za-z_]\w*)$", p)
+        if m:
+            params.append((m.group(2), m.group(1)))
+        else:
+            m2 = re.match(r"^([A-Za-z_]\w*)$", p)
+            if m2:
+                params.append((m2.group(1), "int"))
+    return params
+
+
+def _tokenizar_expresion(texto):
+    patron = r'"[^"]*"|<=|>=|==|!=|&&|\|\||[A-Za-z_]\w*|\d+\.\d+|\d+|[()+\-*/%^<>]'
+    return re.findall(patron, texto)
+
+
+def segmentar_tokens(tokens):
+    chunks = []
+    actual = []
+    depth = 0
+
+    for tok in tokens:
+        cod = token_codigo(tok)
+        if cod == 116:
+            depth += 1
+            actual.append(tok)
+            continue
+        if cod == 117:
+            depth = max(0, depth - 1)
+            actual.append(tok)
+            continue
+        if cod == 120 and depth == 0:
+            if actual:
+                chunks.append(actual)
+                actual = []
+            chunks.append([tok])
+            continue
+        if cod in (118, 119) and depth == 0:
+            if actual:
+                chunks.append(actual)
+                actual = []
+            chunks.append([tok])
+            continue
+        actual.append(tok)
+
+    if actual:
+        chunks.append(actual)
+    return chunks
+
+
+def _tokens_a_lexemas(tokens):
+    return [token_lexema(t) for t in tokens]
+
+
+def infijo_a_prefijo(tokens):
+    if isinstance(tokens, str):
+        lex = _tokenizar_expresion(tokens)
+    else:
+        lex = _tokens_a_lexemas(tokens)
+
+    inv = list(reversed(lex))
+    for i, t in enumerate(inv):
+        if t == "(":
+            inv[i] = ")"
+        elif t == ")":
+            inv[i] = "("
+
+    salida = []
+    pila = []
+    for tok in inv:
+        if tok == "(":
+            pila.append(tok)
+        elif tok == ")":
+            while pila and pila[-1] != "(":
+                salida.append(pila.pop())
+            if pila and pila[-1] == "(":
+                pila.pop()
+        elif tok in OPERADORES_SEM:
+            while pila and pila[-1] in OPERADORES_SEM and (
+                PRECEDENCIA[pila[-1]] > PRECEDENCIA[tok] or
+                (PRECEDENCIA[pila[-1]] == PRECEDENCIA[tok] and tok != "^")
+            ):
+                salida.append(pila.pop())
+            pila.append(tok)
+        else:
+            salida.append(tok)
+
+    while pila:
+        salida.append(pila.pop())
+
+    return list(reversed(salida))
+
+
+def _compatibles_asignacion(tipo_destino, tipo_origen):
+    if tipo_destino == "desconocido" or tipo_origen == "desconocido":
+        return True
+    if tipo_destino == tipo_origen:
+        return True
+    if tipo_destino == "float" and tipo_origen == "int":
+        return True
+    return False
+
+
+def _validar_operacion(op, izq_tipo, der_tipo, errores, contexto="expresión"):
+    if izq_tipo == "desconocido" or der_tipo == "desconocido":
+        return "desconocido"
+
+    if op in OPERADORES_ARIT:
+        if izq_tipo not in TIPOS_NUMERICOS or der_tipo not in TIPOS_NUMERICOS:
+            errores.append(f"ERROR SEMÁNTICO: operación aritmética inválida '{op}' entre '{izq_tipo}' y '{der_tipo}' en {contexto}")
+            return "desconocido"
+        if op == "/" or izq_tipo == "float" or der_tipo == "float":
+            return "float"
+        return "int"
+
+    if op in OPERADORES_REL:
+        if izq_tipo not in TIPOS_NUMERICOS or der_tipo not in TIPOS_NUMERICOS:
+            errores.append(f"ERROR SEMÁNTICO: comparación inválida '{op}' entre '{izq_tipo}' y '{der_tipo}' en {contexto}")
+            return "desconocido"
+        return "bool"
+
+    if op in OPERADORES_LOG:
+        if izq_tipo == "cadena" or der_tipo == "cadena":
+            errores.append(f"ERROR SEMÁNTICO: operación lógica inválida '{op}' con cadenas en {contexto}")
+            return "desconocido"
+        return "bool"
+
+    return "desconocido"
+
+
+def _generar_expresion(expr_tokens, ambitos, errores, temp_inicial, contexto):
+    prefijo = infijo_a_prefijo(expr_tokens)
+    cuartetos = []
+    temp = temp_inicial
+
+    def recorrer(it):
+        nonlocal temp
+        tok = next(it)
+        if tok in OPERADORES_SEM:
+            op1_ref, op1_tipo = recorrer(it)
+            op2_ref, op2_tipo = recorrer(it)
+            res_tipo = _validar_operacion(tok, op1_tipo, op2_tipo, errores, contexto)
+            res_ref = f"T{temp}"
+            temp += 1
+            cuartetos.append((tok, op1_ref, op2_ref, res_ref))
+            return res_ref, res_tipo
+        lit_tipo = _tipo_literal(tok)
+        if lit_tipo is not None:
+            return tok, lit_tipo
+        if _es_identificador(tok):
+            ok, tipo = _buscar_en_ambitos(tok, ambitos)
+            if not ok:
+                errores.append(f"ERROR SEMÁNTICO: identificador no declarado '{tok}' en {contexto}")
+                return tok, "desconocido"
+            return tok, tipo
+        return tok, "desconocido"
+
+    if not prefijo:
+        return [], "desconocido", "", temp
+
+    ref, tipo = recorrer(iter(prefijo))
+    return cuartetos, tipo, ref, temp
+
+
+def _partir_condicion_for(tokens):
+    partes = []
+    actual = []
+    depth = 0
+    for tok in tokens:
+        cod = token_codigo(tok)
+        if cod == 116:
+            depth += 1
+        elif cod == 117:
+            depth = max(0, depth - 1)
+        if cod == 120 and depth == 0:
+            partes.append(actual)
+            actual = []
+        else:
+            actual.append(tok)
+    partes.append(actual)
+    while len(partes) < 3:
+        partes.append([])
+    return partes[:3]
+
+def analizar_semantico(codigo):
+    limpiar_semantico()
+    tokens, errores_lexicos = lexico(codigo)
+    if errores_lexicos:
+        return {
+            "tabla_simbolos": tablaSimbolos,
+            "tabla_funciones": tablaFunciones,
+            "cuartetos": [],
+            "errores": errores_lexicos[:]
+        }
+
+    errores = []
+    cuartetos = []
+    ambitos = [tablaSimbolos]
+    pila_funciones = []
+    pendiente_funcion = None
+    pendientes_else = []   # <-- NUEVO: guarda if pendientes de else
+    temp = 1
+
+    chunks = segmentar_tokens(tokens)
+    i = 0
+    while i < len(chunks):
+        chunk = chunks[i]
+        cod0 = token_codigo(chunk[0]) if chunk else None
+        lex = _tokens_a_lexemas(chunk)
+
+        if len(chunk) == 1 and cod0 == 120:
+            i += 1
+            continue
+
+        if len(chunk) == 1 and cod0 == 119:
+            if len(ambitos) > 1:
+                ambitos.pop()
+            if pila_funciones and len(ambitos) == 1:
+                pila_funciones.pop()
+            i += 1
+            continue
+
+        if len(chunk) == 1 and cod0 == 118:
+            nuevo = {}
+            ambitos.append(nuevo)
+            if pendiente_funcion is not None:
+                nombre_func, retorno, params = pendiente_funcion
+                tablaFunciones[nombre_func] = {"retorno": retorno, "parametros": params}
+                for nombre_param, tipo_param in params:
+                    ok, msg = registrarVariable(nombre_param, tipo_param, ambitos[-1])
+                    if not ok:
+                        errores.append(msg)
+                pila_funciones.append(nombre_func)
+                pendiente_funcion = None
+            i += 1
+            continue
+
+        m_func = re.match(r"^(int|float|void)\s+([A-Za-z_]\w*)\s*\((.*?)\)$", " ".join(lex))
+        if m_func and i + 1 < len(chunks) and len(chunks[i + 1]) == 1 and token_codigo(chunks[i + 1][0]) == 118:
+            pendiente_funcion = (m_func.group(2), m_func.group(1), extraer_parametros(m_func.group(3)))
+            i += 1
+            continue
+
+        m_decl = re.match(r"^(int|float|void)\s+([A-Za-z_]\w*)\s*(?:=\s*(.+))?$", " ".join(lex))
+        if m_decl:
+            tipo, nombre, expr_txt = m_decl.group(1), m_decl.group(2), m_decl.group(3)
+            if nombre in RESERVADAS:
+                errores.append(f"ERROR SEMÁNTICO: no se puede usar la palabra reservada '{nombre}' como identificador")
+                i += 1
+                continue
+            if tipo == "void":
+                errores.append(f"ERROR SEMÁNTICO: la variable '{nombre}' no puede ser de tipo void")
+                i += 1
+                continue
+            ok, msg = registrarVariable(nombre, tipo, ambitos[-1])
+            if not ok:
+                errores.append(msg)
+            if expr_txt is None:
+                cuartetos.append(("DECL", tipo, "", nombre))
+            else:
+                expr_tokens = _tokenizar_expresion(expr_txt)
+                c, tipo_expr, ref, temp = _generar_expresion(expr_tokens, ambitos, errores, temp, f"inicialización de '{nombre}'")
+                cuartetos.extend(c)
+                if tipo_expr != "desconocido" and not _compatibles_asignacion(tipo, tipo_expr):
+                    errores.append(f"ERROR SEMÁNTICO: no se puede asignar '{tipo_expr}' a variable '{nombre}' de tipo '{tipo}'")
+                cuartetos.append(("=", ref or expr_txt, "", nombre))
+            i += 1
+            continue
+
+        m_asig = re.match(r"^([A-Za-z_]\w*)\s*=\s*(.+)$", " ".join(lex))
+        if m_asig:
+            nombre, expr_txt = m_asig.group(1), m_asig.group(2)
+            ok, tipo_var = _buscar_en_ambitos(nombre, ambitos)
+            if not ok:
+                errores.append(f"ERROR SEMÁNTICO: variable no declarada '{nombre}' en asignación")
+                tipo_var = "desconocido"
+            expr_tokens = _tokenizar_expresion(expr_txt)
+            c, tipo_expr, ref, temp = _generar_expresion(expr_tokens, ambitos, errores, temp, f"asignación a '{nombre}'")
+            cuartetos.extend(c)
+            if tipo_expr != "desconocido" and not _compatibles_asignacion(tipo_var, tipo_expr):
+                errores.append(f"ERROR SEMÁNTICO: no se puede asignar '{tipo_expr}' a variable '{nombre}' de tipo '{tipo_var}'")
+            cuartetos.append(("=", ref or expr_txt, "", nombre))
+            i += 1
+            continue
+
+        if cod0 == 25:
+            ids = [token_lexema(t) for t in chunk if token_codigo(t) == 1000]
+            for nombre in ids:
+                ok, _ = _buscar_en_ambitos(nombre, ambitos)
+                if not ok:
+                    errores.append(f"ERROR SEMÁNTICO: variable no declarada '{nombre}' en cin")
+                cuartetos.append(("READ", nombre, "", ""))
+            i += 1
+            continue
+
+        if cod0 == 26:
+            partes = []
+            actual = []
+            for tok in chunk[1:]:
+                if token_codigo(tok) in (115, 114):
+                    if actual:
+                        partes.append(actual)
+                        actual = []
+                else:
+                    actual.append(tok)
+            if actual:
+                partes.append(actual)
+            for parte in partes:
+                expr_txt = " ".join(_tokens_a_lexemas(parte))
+                c, tipo_expr, ref, temp = _generar_expresion(parte, ambitos, errores, temp, f"salida '{expr_txt}'")
+                cuartetos.extend(c)
+                cuartetos.append(("WRITE", ref or expr_txt, "", ""))
+            i += 1
+            continue
+
+        if cod0 == 24:
+            expr_tokens = chunk[1:]
+            c, tipo_expr, ref, temp = _generar_expresion(expr_tokens, ambitos, errores, temp, "return")
+            cuartetos.extend(c)
+            cuartetos.append(("RETURN", ref or " ".join(_tokens_a_lexemas(expr_tokens)), "", ""))
+            i += 1
+            continue
+
+        if cod0 == 20:
+            kw = token_lexema(chunk[0]).upper()
+            cond = []
+            seen = False
+            for tok in chunk[1:]:
+                if token_codigo(tok) == 116:
+                    seen = True
+                    continue
+                if token_codigo(tok) == 117:
+                    break
+                if seen:
+                    cond.append(tok)
+            c, tipo_cond, ref, temp = _generar_expresion(cond, ambitos, errores, temp, f"condición de {kw}")
+            cuartetos.extend(c)
+            cuartetos.append((kw, ref or " ".join(_tokens_a_lexemas(cond)), "", ""))
+
+            pendientes_else.append(True)   # <-- NUEVO: este if puede tener else
+            i += 1
+            continue
+
+        if cod0 == 21:
+            if not pendientes_else:
+                errores.append("ERROR SEMÁNTICO: 'else' sin un 'if' previo")
+            else:
+                pendientes_else.pop()
+                cuartetos.append(("ELSE", "", "", ""))  # <-- NUEVO: reconocer else
+            i += 1
+            continue
+
+        if cod0 == 22:
+            kw = token_lexema(chunk[0]).upper()
+            cond = []
+            seen = False
+            for tok in chunk[1:]:
+                if token_codigo(tok) == 116:
+                    seen = True
+                    continue
+                if token_codigo(tok) == 117:
+                    break
+                if seen:
+                    cond.append(tok)
+            c, tipo_cond, ref, temp = _generar_expresion(cond, ambitos, errores, temp, f"condición de {kw}")
+            cuartetos.extend(c)
+            cuartetos.append((kw, ref or " ".join(_tokens_a_lexemas(cond)), "", ""))
+            i += 1
+            continue
+
+        if cod0 == 23:
+            inner = []
+            seen = False
+            for tok in chunk[1:]:
+                if token_codigo(tok) == 116:
+                    seen = True
+                    continue
+                if token_codigo(tok) == 117:
+                    break
+                if seen:
+                    inner.append(tok)
+            init, cond, update = _partir_condicion_for(inner)
+
+            if init:
+                init_txt = " ".join(_tokens_a_lexemas(init))
+                m = re.match(r"^([A-Za-z_]\w*)\s*=\s*(.+)$", init_txt)
+                if m:
+                    nombre, expr_txt = m.group(1), m.group(2)
+                    ok, tipo_var = _buscar_en_ambitos(nombre, ambitos)
+                    if not ok:
+                        errores.append(f"ERROR SEMÁNTICO: variable no declarada '{nombre}' en for (inicialización)")
+                        tipo_var = "desconocido"
+                    expr_tokens = _tokenizar_expresion(expr_txt)
+                    c, tipo_expr, ref, temp = _generar_expresion(expr_tokens, ambitos, errores, temp, f"for-inicialización de '{nombre}'")
+                    cuartetos.extend(c)
+                    if tipo_expr != "desconocido" and not _compatibles_asignacion(tipo_var, tipo_expr):
+                        errores.append(f"ERROR SEMÁNTICO: no se puede asignar '{tipo_expr}' a variable '{nombre}' de tipo '{tipo_var}'")
+                    cuartetos.append(("=", ref or expr_txt, "", nombre))
+
+            if cond:
+                c, tipo_cond, ref, temp = _generar_expresion(cond, ambitos, errores, temp, "condición de for")
+                cuartetos.extend(c)
+                cuartetos.append(("FOR_COND", ref or " ".join(_tokens_a_lexemas(cond)), "", ""))
+
+            if update:
+                upd_txt = " ".join(_tokens_a_lexemas(update))
+                m = re.match(r"^([A-Za-z_]\w*)\s*=\s*(.+)$", upd_txt)
+                if m:
+                    nombre, expr_txt = m.group(1), m.group(2)
+                    ok, tipo_var = _buscar_en_ambitos(nombre, ambitos)
+                    if not ok:
+                        errores.append(f"ERROR SEMÁNTICO: variable no declarada '{nombre}' en for (actualización)")
+                        tipo_var = "desconocido"
+                    expr_tokens = _tokenizar_expresion(expr_txt)
+                    c, tipo_expr, ref, temp = _generar_expresion(expr_tokens, ambitos, errores, temp, f"for-actualización de '{nombre}'")
+                    cuartetos.extend(c)
+                    if tipo_expr != "desconocido" and not _compatibles_asignacion(tipo_var, tipo_expr):
+                        errores.append(f"ERROR SEMÁNTICO: no se puede asignar '{tipo_expr}' a variable '{nombre}' de tipo '{tipo_var}'")
+                    cuartetos.append(("=", ref or expr_txt, "", nombre))
+
+            cuartetos.append(("FOR", "", "", ""))
+            i += 1
+            continue
+
+        errores.append(f"ERROR SEMÁNTICO: sentencia no reconocida -> {' '.join(lex)}")
+        i += 1
+
+    return {
+        "tabla_simbolos": tablaSimbolos,
+        "tabla_funciones": tablaFunciones,
+        "cuartetos": cuartetos,
+        "errores": errores
+    }
+
+def _codigo_visual_operacion(op):
+    mapa = {
+        'DECL': 5,
+        'READ': 25,
+        'WRITE': 35,
+        'RETURN': 151,
+        '=': 150,
+        'FOR': 300,
+        'FOR_COND': 301,
+        '+': 401,
+        '-': 402,
+        '*': 403,
+        '/': 404,
+        '%': 405,
+        '^': 406,
+        '<': 410,
+        '>': 411,
+        '<=': 412,
+        '>=': 413,
+        '==': 414,
+        '!=': 415,
+        '&&': 416,
+        '||': 417,
+    }
+    return mapa.get(op, op)
+
+
+def _normalizar_visual(valor):
+    if valor in ('', [], (), {}):
+        return None
+    return valor
+
+
+def imprimir_cuartetos(cuartetos):
+    for i, (op, a1, a2, r) in enumerate(cuartetos, start=1):
+        op_v = _codigo_visual_operacion(op)
+        a1_v = _normalizar_visual(a1)
+        a2_v = _normalizar_visual(a2)
+        r_v = _normalizar_visual(r)
+        print(f"{i}: ({op_v!r}, {a1_v!r}, {a2_v!r}, {r_v!r})")
+
+
+def ejecutar_analisis(codigo):
+    tokens, errores_lexicos = lexico(codigo)
+    print('TOKENS:', tokens)
+    print('ERRORES LÉXICOS:', errores_lexicos)
+
+    if errores_lexicos:
+        print('No se analiza sintáctica ni semánticamente por errores léxicos.')
+        return
+
+    resultado_sintactico = parsear(tokens)
+    print('RESULTADO SINTÁCTICO:', resultado_sintactico)
+
+    if resultado_sintactico != 'VÁLIDO':
+        return
+
+    sem = analizar_semantico(codigo)
+
+    if sem['errores']:
+        print('\nERRORES SEMÁNTICOS:')
+        for e in sem['errores']:
+            print('-', e)
+        return
+
+    print('\nVálido')
+    imprimir_cuartetos(sem['cuartetos'])
+
+
+if __name__ == '__main__':
+    codigo_prueba = '''int a;
+int b;
+int c;
+int d;
+int e;
+float f;
+f = (a + b) * c - d / e;
 '''
-
-# 1. LÉXICO
-tokens, errores_lexicos = lexico(codigo)
-
-print("TOKENS:", tokens)
-print("ERRORES LÉXICOS:", errores_lexicos)
-
-# 2. SI NO HAY ERRORES → SINTÁCTICO
-if not errores_lexicos:
-    resultado = parsear(tokens)   # función inicial del parser
-    print("RESULTADO SINTÁCTICO:", resultado)
-else:
-    print("No se analiza sintácticamente por errores léxicos")
+    ejecutar_analisis(codigo_prueba)

@@ -1,0 +1,79 @@
+EJEMPLOS VALIDOS
+1)
+int a;
+int b;
+int c;
+int d;
+int e;
+e = (a + b) * (c - d);
+
+2) void proceso(n) {
+    int i;
+    i = 0;
+    while (i < n) {
+        if (i != 2) {
+            cout << i;
+        } else {
+            cout << "dos";
+        }
+        i = i + 1;
+    }
+}
+ 
+
+
+3)
+int a;
+float b;
+a = 5;
+b = 2.5;
+cin >> a ;
+cout <<b;
+
+4)
+float calcularPromedio(a, b, c) {
+    float r;
+    int activo;
+    activo = 1;
+    cin >> a; 
+    cin>> b;
+     cin >> c;
+    r = (a + b + c) / 3;
+    if (activo && a < b) {
+        cout << r;
+    } else {
+        while (activo && c > 0) {
+            cout << "proceso";
+            activo = activo - 1;
+        }
+    }
+    return r;
+}
+EJEMPLOS INVALIDOS
+1)
+int x = 10;
+float x=10.1;
+cout << x;
+ 
+2)
+void proceso(n) {
+    int i;
+    i = 0;
+    while (i < n) {
+        if (i != 2) {
+            cout << i;
+        } else {
+            cout << "dos";
+        }
+        i = i + 1+ "qwe";
+    }
+}
+
+3)
+int a;
+int b;
+int c;
+int d;
+int e;
+float f;
+f = (a + b) * c - d / e;
