@@ -1,6 +1,5 @@
 import re
 def lexico(codigo):
-
     codigo = codigo + " "
     i = 0
     n = len(codigo)
@@ -1243,7 +1242,7 @@ def ejecutar_analisis(codigo):
     print('\nVálido')
     imprimir_cuartetos(sem['cuartetos'])
 
-
+#Aqui va el codigo
 if __name__ == '__main__':
     codigo_prueba = '''int a;
 int b;
